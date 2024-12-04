@@ -16,6 +16,7 @@ import (
 	"github.com/bnb-chain/tss-lib/v2/common"
 	"github.com/bnb-chain/tss-lib/v2/crypto"
 	"github.com/btcsuite/btcd/btcec/v2"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil/base58"
 	"golang.org/x/crypto/ripemd160"
 )
@@ -252,4 +253,18 @@ func DeriveChildKey(index uint32, pk *ExtendedKey, curve elliptic.Curve) (*big.I
 		Version:    pk.Version,
 	}
 	return ilNum, childPk, nil
+}
+
+func DerivingPubkeyFromPath(masterPub *crypto.ECPoint, chainCode []byte, path []uint32, ec elliptic.Curve) (*big.Int, *ExtendedKey, error) {
+	net := &chaincfg.MainNetParams
+	extendedParentPk := &ExtendedKey{
+		PublicKey:  masterPub,
+		Depth:      0,
+		ChildIndex: 0,
+		ChainCode:  chainCode[:],
+		ParentFP:   []byte{0x00, 0x00, 0x00, 0x00},
+		Version:    net.HDPrivateKeyID[:],
+	}
+
+	return DeriveChildKeyFromHierarchy(path, extendedParentPk, ec.Params().N, ec)
 }
