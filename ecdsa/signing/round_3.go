@@ -96,11 +96,14 @@ func (round *round3) Start() *tss.Error {
 	wg.Wait()
 	close(errChs)
 	culprits := make([]*tss.PartyID, 0, len(round.Parties().IDs()))
+	errs := make([]error, 0, len(round.Parties().IDs()))
 	for err := range errChs {
 		culprits = append(culprits, err.Culprits()...)
+		errs = append(errs, err)
 	}
 	if len(culprits) > 0 {
-		return round.WrapError(errors.New("failed to calculate Alice_end or Alice_end_wc"), culprits...)
+		errs = append(errs, errors.New("failed to calculate Alice_end or Alice_end_wc"))
+		return round.WrapError(errors.Join(errs...), culprits...)
 	}
 
 	modN := common.ModInt(round.Params().EC().Params().N)
